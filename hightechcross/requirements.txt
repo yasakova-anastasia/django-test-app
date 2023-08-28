@@ -1,0 +1,6 @@
+Django~=4.2.1
+djangorestframework~=3.14.0
+django-allauth>=0.52.0
+dj-rest-auth==2.2.7
+drf-spectacular>=0.26.2
+drf-nested-routers

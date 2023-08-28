@@ -1,0 +1,389 @@
+openapi: 3.0.0
+info:
+  title: 'HighTechCross'
+  version: "1.0.0"
+  description: The API for HighTechCross
+paths:
+  /api/crosses:
+    post:
+      tags:
+        - crosses
+      summary: Create a cross with tasks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrossInput'
+      security:
+        - tokenAuth: []
+      responses:
+        '201':
+          description: Cross successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cross'
+        '401':
+          description: Unauthorized access
+    get:
+      tags:
+        - crosses
+      summary: Get crosses information
+      security:
+        - tokenAuth: []
+      responses:
+        '200':
+          description: Crosses information
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Cross'
+        '401':
+          description: Unauthorized access
+  /api/crosses/{cross_id}:
+    get:
+      tags:
+        - crosses
+      summary: Get information about a specific cross
+      parameters:
+        - name: cross_id
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - tokenAuth: []
+      responses:
+        '200':
+          description: Cross information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cross'
+        '401':
+          description: Unauthorized access
+        '404':
+          description: Cross not found
+  /api/crosses/{cross_id}/start:
+    post:
+      tags:
+        - crosses
+      summary: Start a cross with the specified ID
+      description: Only one cross can run at a time
+      parameters:
+        - name: cross_id
+          in: path
+          description: ID of the cross to start
+          required: true
+          schema:
+            type: string
+      security:
+        - tokenAuth: []
+      responses:
+        '200':
+          description: Cross started successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cross'
+        '401':
+          description: Unauthorized access
+        '404':
+          description: Cross not found
+  /api/auth/login:
+    post:
+      tags:
+        - auth
+      summary: Application authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                login:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Successful login to the application
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+        '401':
+          description: Wrong login or password
+  /api/tasks:
+    get:
+      summary: Get a list of all tasks of current cross
+      tags:
+        - tasks
+      security:
+        - tokenAuth: []
+      responses:
+        '200':
+          description: List of all tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserTask'
+  /api/tasks/{task_id}:
+    get:
+      summary: Get information about a task
+      tags:
+        - tasks
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - tokenAuth: []
+      responses:
+        '200':
+          description: Task information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserTask'
+        '404':
+          description: Task not found
+  /api/tasks/{task_id}/submit:
+    post:
+      summary: Submit an answer to a task
+      tags:
+        - tasks
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                answer:
+                  type: string
+              required:
+                - answer
+      security:
+        - tokenAuth: []
+      responses:
+        '200':
+          description: Answer status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+        '400':
+          description: Cross finished
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        '404':
+          description: Task not found
+  /api/tasks/{task_id}/hints/{hint_number}:
+    post:
+      summary: Open next hint
+      tags:
+        - tasks
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: hint_number
+          in: path
+          required: true
+          description: Hint number - 0, 1, 2
+          schema:
+            type: integer
+      security:
+        - tokenAuth: []
+      responses:
+        '200':
+          description: Task hint
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  hint:
+                    type: string
+        '400':
+          description: Invalid hint number. Hint numbers - 0, 1, 2
+        '404':
+          description: Task not found
+  /api/crosses/{cross_id}/results:
+    get:
+      summary: Get results of all teams
+      description: Get the results of all teams in descending order by the number of correctly solved tasks, then who has less penalty time
+      tags:
+        - crosses
+      parameters:
+        - name: cross_id
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - tokenAuth: []
+      responses:
+        '200':
+          description: Results of all teams
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Result'
+  /api/crosses/{cross_id}/results/{team_id}:
+    get:
+      summary: Get results of a specific team
+      tags:
+        - crosses
+      parameters:
+        - name: cross_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: team_id
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - tokenAuth: []
+      responses:
+        '200':
+          description: Results of a specific team
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Result'
+        '404':
+          description: Team not found
+components:
+  schemas:
+    CrossInput:
+      type: object
+      properties:
+        name:
+          type: string
+        tasks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Task'
+    Cross:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        tasks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Task'
+        start_time:
+          type: string
+        end_time:
+          type: string
+        status:
+          type: string
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Result'
+    Task:
+      type: object
+      properties:
+        name:
+          type: string
+        coordinates:
+          type: string
+        description:
+          type: string
+        correct_answer:
+          type: string
+        hints:
+          type: array
+          items:
+            type: string
+    UserTask:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        coordinates:
+          type: string
+        description:
+          type: string
+        hints:
+          type: array
+          items:
+            $ref: '#/components/schemas/Hint'
+        status:
+          type: string
+    TaskResult:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        status:
+          type: boolean
+    Hint:
+      type: object
+      properties:
+        text:
+          type: string
+        is_open:
+          type: boolean
+    Result:
+      type: object
+      properties:
+        id:
+          type: string
+        place:
+          type: integer
+        team_name:
+          type: string
+        tasks:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskResult'
+        completed_tasks:
+          type: integer
+        penalty_time:
+          type: number
+  securitySchemes:
+    tokenAuth:
+      type: apiKey
+      in: header
+      name: Authorization
