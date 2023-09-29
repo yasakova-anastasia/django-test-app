@@ -1,8 +1,9 @@
 import pytest
 from django.contrib.auth.models import User
-from rest_framework.test import APIClient
-from rest_framework import status
 from django.urls import reverse
+from rest_framework import status
+from rest_framework.test import APIClient
+
 
 @pytest.fixture
 def authenticated_client():
@@ -10,6 +11,7 @@ def authenticated_client():
     client = APIClient()
     client.force_authenticate(user=user)
     return client
+
 
 @pytest.mark.django_db
 def test_create_user(authenticated_client):
@@ -21,6 +23,7 @@ def test_create_user(authenticated_client):
     assert response.status_code == status.HTTP_201_CREATED
     assert User.objects.filter(username='newuser').exists()
 
+
 @pytest.mark.django_db
 def test_get_user(authenticated_client):
     client = authenticated_client
@@ -31,6 +34,7 @@ def test_get_user(authenticated_client):
     assert response.status_code == status.HTTP_200_OK
     assert response.data['username'] == 'testuser1'
 
+
 @pytest.mark.django_db
 def test_delete_user(authenticated_client):
     client = authenticated_client
@@ -40,6 +44,7 @@ def test_delete_user(authenticated_client):
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
     assert not User.objects.filter(username='user_to_delete').exists()
+
 
 @pytest.mark.django_db
 def test_get_multiple_users(authenticated_client):
@@ -74,6 +79,7 @@ def test_sort_users(authenticated_client):
     usernames = [user['username'] for user in response.data]
     assert usernames == ['a', 'b', 'c', 'testuser']
 
+
 @pytest.mark.django_db
 def test_filter_users(authenticated_client):
     client = authenticated_client
@@ -88,3 +94,24 @@ def test_filter_users(authenticated_client):
 
     assert len(response.data) == 1
     assert response.data[0]['username'] == 'user2'
+
+
+@pytest.mark.django_db
+def test_update_user(authenticated_client):
+    client = authenticated_client
+
+    user = User.objects.create_user(username='user_to_update', password='testpassword', email='update@example.com')
+
+    updated_data = {
+        'username': 'newusername',
+        'email': 'newemail@example.com',
+    }
+
+    url = reverse('user-detail', args=[user.id])
+    response = client.put(url, updated_data, format='json')
+
+    assert response.status_code == status.HTTP_200_OK
+
+    user.refresh_from_db()
+    assert user.username == updated_data['username']
+    assert user.email == updated_data['email']
